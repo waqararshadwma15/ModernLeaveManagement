@@ -43,10 +43,15 @@ export async function POST(req: Request) {
 }
 export async function GET() {
   try {
+    console.log('Seed: Starting GET request');
     await connectToDatabase();
+    console.log('Seed: Connected to database');
     
     // Check if any admin exists
+    console.log('Seed: Searching for admin user');
     const adminExists = await User.findOne({ role: 'admin' });
+    console.log('Seed: Admin search complete', adminExists ? 'Found' : 'Not found');
+    
     if (adminExists) {
         return NextResponse.json({ 
             message: 'Admin already exists. Use the existing credentials.',
@@ -54,6 +59,7 @@ export async function GET() {
         });
     }
 
+    console.log('Seed: Creating default admin user');
     const defaultAdmin = new User({
       username: 'admin',
       email: 'admin@company.com',
@@ -62,7 +68,9 @@ export async function GET() {
       role: 'admin'
     });
 
+    console.log('Seed: Saving default admin user');
     await defaultAdmin.save();
+    console.log('Seed: Default admin saved successfully');
 
     return NextResponse.json({
       message: 'Default admin created successfully',
@@ -74,6 +82,6 @@ export async function GET() {
 
   } catch (error: any) {
     console.error('Seed error:', error);
-    return NextResponse.json({ error: 'Failed to seed default admin', details: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to seed default admin', details: error.message, stack: error.stack }, { status: 500 });
   }
 }

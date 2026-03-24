@@ -53,3 +53,68 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
+
+export async function POST(req: NextRequest) {
+  try {
+    const token = req.cookies.get('token')?.value || req.headers.get('authorization')?.replace('Bearer ', '');
+    if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    
+    const payload = await verifyToken(token);
+    if (!payload) return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+
+    const { leaveType, startDate, endDate, reason, attachmentUrl } = await req.json();
+
+    if (!leaveType || !startDate || !endDate || !reason) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    }
+
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    if (end < start) {
+      return NextResponse.json({ error: 'End date cannot be before start date' }, { status: 400 });
+    }
+
+    await connectToDatabase();
+
+    // Check for overlapping leaves
+    const overlapping = await Leave.findOne({
+      user: payload.userId,
+      status: { $in: ['pending', 'approved_by_hod', 'approved_by_hr'] },
+      $or: [
+        { startDate: { $lte: end, $gte: start } },
+        { endDate: { $lte: end, $gte: start } },
+        { startDate: { $lte: start }, endDate: { $gte: end } }
+      ]
+    });
+
+    if (overlapping) {
+      return NextResponse.json({ error: 'You already have an overlapping leave request' }, { status: 400 });
+    }
+
+    const newLeave = new Leave({
+      user: payload.userId,
+      leaveType,
+      startDate: start,
+      endDate: end,
+      reason,
+      attachmentUrl,
+      status: 'pending',
+      currentStage: 'hod',
+      workflowHistory: [{
+        actor: payload.userId,
+        action: 'applied',
+        date: new Date(),
+        comment: 'Leave request submitted',
+        stage: 'Employee'
+      }]
+    });
+
+    await newLeave.save();
+
+    return NextResponse.json({ message: 'Leave request submitted successfully', leave: newLeave }, { status: 201 });
+  } catch (error: any) {
+    console.error('Apply Leave Error:', error);
+    return NextResponse.json({ error: 'Internal Server Error', details: error.message }, { status: 500 });
+  }
+}

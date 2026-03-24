@@ -7,6 +7,11 @@ export interface IUser extends Document {
   department: string;
   password?: string;
   role: 'employee' | 'department_head' | 'hr' | 'admin';
+  leaveBalance: {
+    casual: number;
+    sick: number;
+    short: number;
+  };
   comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
@@ -37,17 +42,21 @@ const UserSchema = new Schema<IUser>({
     enum: ['employee', 'department_head', 'hr', 'admin'],
     default: 'employee',
   },
+  leaveBalance: {
+    casual: { type: Number, default: 10 },
+    sick: { type: Number, default: 8 },
+    short: { type: Number, default: 5 }
+  }
 }, { timestamps: true });
 
-UserSchema.pre('save', async function (this: any, next: any) {
-  if (!this.isModified('password') || !this.password) return next();
+UserSchema.pre('save', async function (this: IUser) {
+  if (!this.isModified('password') || !this.password) return;
   
   try {
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
-    next();
   } catch (err: any) {
-    next(err);
+    throw err;
   }
 });
 
@@ -56,4 +65,7 @@ UserSchema.methods.comparePassword = async function (candidatePassword: string):
   return bcrypt.compare(candidatePassword, this.password);
 };
 
-export const User: Model<IUser> = mongoose.models.User || mongoose.model<IUser>('User', UserSchema);
+if (mongoose.models.User) {
+  delete mongoose.models.User;
+}
+export const User: Model<IUser> = mongoose.model<IUser>('User', UserSchema);

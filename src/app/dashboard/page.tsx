@@ -1,7 +1,9 @@
 import { cookies } from 'next/headers';
 import { verifyToken } from '@/utils/auth';
+import Navbar from '@/components/Navbar';
 import DepartmentDashboard from '@/components/DepartmentDashboard';
 import HRDashboard from '@/components/HRDashboard';
+import EmployeeDashboard from '@/components/EmployeeDashboard';
 import { Leave } from '@/models/Leave';
 import connectToDatabase from '@/utils/db';
 import { User } from '@/models/User';
@@ -32,9 +34,21 @@ export default async function DashboardPage() {
   let initialLeaves = [];
 
   if (role === 'employee') {
+    const user = await User.findById(userId);
+    const leaves = await Leave.find({ user: userId }).sort({ createdAt: -1 });
+    
+    // Serialize
+    const serializedUser = JSON.parse(JSON.stringify(user));
+    const serializedLeaves = JSON.parse(JSON.stringify(leaves));
+
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
-        <h1 className="text-2xl font-semibold text-gray-600">Employee Dashboard incoming...</h1>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+        <Navbar user={serializedUser} />
+        <div className="p-4 md:p-8">
+          <div className="max-w-6xl mx-auto">
+            <EmployeeDashboard user={serializedUser} initialLeaves={serializedLeaves} />
+          </div>
+        </div>
       </div>
     );
   }
@@ -46,29 +60,37 @@ export default async function DashboardPage() {
       .populate('user', 'username department')
       .sort({ createdAt: -1 });
       
-    // Serialize mongoose documents to plain JSON for Client Components
     initialLeaves = JSON.parse(JSON.stringify(leaves)); 
+    const serializedUser = JSON.parse(JSON.stringify(hod));
     
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 p-4 md:p-8">
-        <div className="max-w-6xl mx-auto">
-          <DepartmentDashboard initialLeaves={initialLeaves} />
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+        <Navbar user={serializedUser} />
+        <div className="p-4 md:p-8">
+          <div className="max-w-6xl mx-auto">
+            <DepartmentDashboard initialLeaves={initialLeaves} />
+          </div>
         </div>
       </div>
     );
   }
 
   if (role === 'hr' || role === 'admin') {
+    const admin = await User.findById(userId);
     const leaves = await Leave.find({})
       .populate('user', 'username department')
       .sort({ createdAt: -1 });
       
     initialLeaves = JSON.parse(JSON.stringify(leaves));
+    const serializedUser = JSON.parse(JSON.stringify(admin));
     
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 p-4 md:p-8">
-        <div className="max-w-7xl mx-auto">
-          <HRDashboard initialLeaves={initialLeaves} />
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+        <Navbar user={serializedUser} />
+        <div className="p-4 md:p-8">
+          <div className="max-w-7xl mx-auto">
+            <HRDashboard initialLeaves={initialLeaves} />
+          </div>
         </div>
       </div>
     );

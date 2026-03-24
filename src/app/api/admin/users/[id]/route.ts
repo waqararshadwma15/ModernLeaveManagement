@@ -13,22 +13,30 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const { role, department, email } = await req.json();
+    const { role, department, email, password, username } = await req.json();
     const { id } = await params;
 
     await connectToDatabase();
 
-    const updatedUser = await User.findByIdAndUpdate(
-      id,
-      { ...(role && { role }), ...(department && { department }), ...(email && { email }) },
-      { new: true, runValidators: true }
-    ).select('-password');
-
-    if (!updatedUser) {
+    const user = await User.findById(id);
+    if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ message: 'User updated successfully', user: updatedUser });
+    // Update fields if provided
+    if (role) user.role = role;
+    if (department) user.department = department;
+    if (email) user.email = email;
+    if (username) user.username = username;
+    if (password) user.password = password;
+
+    await user.save();
+    
+    // Convert to object and remove password for response
+    const userObj = user.toObject();
+    delete userObj.password;
+
+    return NextResponse.json({ message: 'User updated successfully', user: userObj });
   } catch (error: any) {
     console.error('Update user error:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

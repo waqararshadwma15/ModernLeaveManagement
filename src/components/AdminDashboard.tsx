@@ -36,8 +36,14 @@ export default function AdminDashboard({ initialUsers }: { initialUsers: any[] }
     const url = editingUser ? `/api/admin/users/${editingUser._id}` : '/api/admin/users';
     const method = editingUser ? 'PUT' : 'POST';
 
-    // If editing, we ignore the password and username typically, but here we just pass role, department, email
-    const payload = editingUser ? { role: formData.role, department: formData.department, email: formData.email } : formData;
+    // If editing, we include all fields but only password if it's not empty
+    const payload: any = { 
+      role: formData.role, 
+      department: formData.department, 
+      email: formData.email,
+      username: formData.username
+    };
+    if (formData.password) payload.password = formData.password;
 
     const res = await fetch(url, {
       method,
@@ -147,18 +153,18 @@ export default function AdminDashboard({ initialUsers }: { initialUsers: any[] }
               <p className="text-sm text-gray-500 mb-8">{editingUser ? 'Update the role or department of an existing team member.' : 'Provision a new account for an employee.'}</p>
               
               <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-                {!editingUser && (
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Username</label>
-                      <input autoFocus required type="text" placeholder="jdoe" className="w-full border border-gray-200 p-3 rounded-xl dark:bg-gray-800 dark:border-gray-700 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none transition" value={formData.username} onChange={e => setFormData({...formData, username: e.target.value})} />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Password</label>
-                      <input required type="password" placeholder="••••••••" className="w-full border border-gray-200 p-3 rounded-xl dark:bg-gray-800 dark:border-gray-700 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none transition" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} />
-                    </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Username</label>
+                    <input disabled={!!editingUser} autoFocus={!editingUser} required type="text" placeholder="jdoe" className={`w-full border border-gray-200 p-3 rounded-xl dark:bg-gray-800 dark:border-gray-700 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none transition ${editingUser ? 'opacity-50 cursor-not-allowed' : ''}`} value={formData.username} onChange={e => setFormData({...formData, username: e.target.value})} />
                   </div>
-                )}
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase mb-2">
+                      {editingUser ? 'New Password (Optional)' : 'Password'}
+                    </label>
+                    <input required={!editingUser} type="password" placeholder="••••••••" className="w-full border border-gray-200 p-3 rounded-xl dark:bg-gray-800 dark:border-gray-700 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none transition" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} />
+                  </div>
+                </div>
 
                 <div>
                   <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Email Address</label>
