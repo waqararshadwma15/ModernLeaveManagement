@@ -41,3 +41,39 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
+export async function GET() {
+  try {
+    await connectToDatabase();
+    
+    // Check if any admin exists
+    const adminExists = await User.findOne({ role: 'admin' });
+    if (adminExists) {
+        return NextResponse.json({ 
+            message: 'Admin already exists. Use the existing credentials.',
+            username: adminExists.username
+        });
+    }
+
+    const defaultAdmin = new User({
+      username: 'admin',
+      email: 'admin@company.com',
+      department: 'Management',
+      password: 'admin123',
+      role: 'admin'
+    });
+
+    await defaultAdmin.save();
+
+    return NextResponse.json({
+      message: 'Default admin created successfully',
+      credentials: {
+        username: 'admin',
+        password: 'admin123'
+      }
+    });
+
+  } catch (error: any) {
+    console.error('Seed error:', error);
+    return NextResponse.json({ error: 'Failed to seed default admin', details: error.message }, { status: 500 });
+  }
+}
