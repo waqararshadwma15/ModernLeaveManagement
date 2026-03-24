@@ -9,15 +9,32 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@tanstack/react-table": "^8.21.3",
+    "bcryptjs": "^3.0.3",
+    "cloudinary": "^2.9.0",
+    "framer-motion": "^12.38.0",
+    "jose": "^6.2.2",
+    "jsonwebtoken": "^9.0.3",
+    "lucide-react": "^1.0.1",
+    "mongoose": "^9.3.2",
+    "multer": "^2.1.1",
     "next": "16.2.1",
+    "nodemailer": "^8.0.3",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "recharts": "^3.8.0",
+    "streamifier": "^0.1.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/multer": "^2.1.0",
     "@types/node": "^20",
+    "@types/nodemailer": "^7.0.11",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/streamifier": "^0.1.2",
     "babel-plugin-react-compiler": "1.0.0",
     "eslint": "^9",
     "eslint-config-next": "16.2.1",
